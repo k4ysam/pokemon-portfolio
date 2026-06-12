@@ -7,3 +7,5 @@ dist
 tuxemon-assets/
 # local screenshot artifacts
 shot_*.png
+# generated collision review overlay (rerun scripts/derive-collision.py)
+collision-overlay.png

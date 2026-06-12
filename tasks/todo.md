@@ -83,3 +83,47 @@ All 6 parts implemented and verified (build + headless-browser smoke).
 - Mobile touch emulation: D-pad (4 dirs) + A/B buttons render and are wired.
 
 **Out of scope (per spec):** PokéMart shows a placeholder dialogue.
+
+---
+
+# Plan: Replace town with town_rev.png (mechanics unchanged) — DONE
+
+## Requirements
+- Swap the pre-rendered background from `public/assets/town-bg.png` (800×640, 25×20 tiles) to `town_rev.png` (1536×1024 = 48×32 tiles @ 32px, grid-aligned).
+- Keep ALL mechanics intact: tile movement, camera zoom/clamp, y-sorting, wanderers, door/sign interactions, "!" indicator, hold-c collision debug.
+- Map the 5 new buildings to existing content: HOME→about, LAB→skills, GYM→projects, CONTACT (P-center)→contact modal, MISC→MART placeholder dialogue.
+
+## Phase 1: Asset swap
+- [x] Copy `town_rev.png` → `public/assets/town-bg.png`; bump `ASSET_VERSION` in GameCanvas.jsx
+
+## Phase 2: Constants
+- [x] `constants.js`: MAP_W 25→48, MAP_H 20→32 (TILE stays 32); update comments
+
+## Phase 3: Collision derivation
+- [x] Rework `scripts/derive-collision.py` for 48×32; widened path thresholds (v>0.55, s<0.8)
+- [x] Manual overrides: 5 buildings, fountain (21-24 × 15-17 incl. ring spill), pond, garden, tree borders; forced-open LAB approach (23,9)
+- [x] Flood fill from spawn (501 reachable); reviewed overlay at tile level; rows pasted into `mapData.js`
+
+## Phase 4: Map data
+- [x] 2-tile-wide door interactions for all 5 buildings; SIGN on the notice board at (25-26, 8); `FOREGROUND_RECTS = []`; `SPAWN` (22,13) north of fountain
+
+## Phase 5: Wanderers
+- [x] All 5 re-placed: professor west avenue, Silver east avenue, Pikachu fountain plaza, Eevee grass HOME↔LAB, Piplup lower walkway
+
+## Phase 6: Verify
+- [x] `npm run build` green; shot-zoom + new `scripts/verify-town.mjs`: all 11 interaction targets + 4 camera clamps PASS, zero console errors
+
+## Review
+
+- Image is exactly 48×32 tiles at the existing TILE=32 — no engine changes,
+  only data (constants, mapData, npc) + ASSET_VERSION bump.
+- Collision pipeline: per-tile color heuristic measured numerically per door
+  approach (non-walkable %), so every door has a verified 2-tile approach.
+- Found + fixed a PRE-EXISTING bug exposed by testing: `ContentModal` treated
+  the shared `closeSignal` counter as a boolean, so every modal after the
+  first self-closed on mount. Fixed with the same prev-ref pattern
+  DialogueBox already used.
+- New permanent E2E: `scripts/verify-town.mjs` (doors/sign/camera sweep).
+- South stairs lead off-map; kept closed at the tree line (player can stand
+  on the landing). Unreachable grass enclaves behind buildings auto-blocked
+  by flood fill.

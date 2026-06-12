@@ -9,9 +9,9 @@ import { currentDir } from './input.js'
 import { drawScene } from './renderer.js'
 import { createGameLoop, loadImage } from './gameLoop.js'
 
-const BASE_W = MAP_W * TILE // 800
-const BASE_H = MAP_H * TILE // 640
-const ASSET_VERSION = 8
+const BASE_W = MAP_W * TILE // 1536
+const BASE_H = MAP_H * TILE // 1024
+const ASSET_VERSION = 9
 // Camera viewport: ~13 tiles visible vertically (map is 20) so the view stays
 // zoomed in on the player and the town reads larger on screen.
 const VIEW_TILES_Y = 13

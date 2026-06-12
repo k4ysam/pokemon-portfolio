@@ -1,10 +1,10 @@
 // Shared game constants.
 // The town is a single pre-rendered background (public/assets/town-bg.png,
-// 800x640) over a 25x20 grid of 32px tiles; collision lives in mapData.js.
+// 1536x1024) over a 48x32 grid of 32px tiles; collision lives in mapData.js.
 
 export const TILE = 32 // tile size in px on the background image
-export const MAP_W = 25
-export const MAP_H = 20
+export const MAP_W = 48
+export const MAP_H = 32
 export const MOVE_MS = 150 // ms to traverse one tile
 
 // Overworld character frame size in the source sheets (player.png / npcs.png),
