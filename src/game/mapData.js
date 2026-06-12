@@ -45,19 +45,18 @@ function building(key, col, row, intId) {
   return { doorCol, doorRow }
 }
 
-// top row (rows 1-4)
-const home = building('bld_home', 1, 1, INT.HOUSE)
-const lab = building('bld_lab', 7, 1, INT.LAB)
-const gym = building('bld_gym', 13, 1, INT.GYM)
+// top row (footprint rows 2-5; the tall Sinnoh roofs extend up over rows 0-1)
+const home = building('bld_home', 1, 2, INT.HOUSE)
+const lab = building('bld_lab', 7, 2, INT.LAB)
+const gym = building('bld_gym', 13, 2, INT.GYM)
 // bottom row (rows 8-11)
 const center = building('bld_center', 2, 8, INT.CENTER)
 const mart = building('bld_mart', 13, 8, INT.MART)
 
 // ---- paths (1 tile wide; autotiled below) ----
+// top-row doors (row 5) open directly onto the avenue (row 6)
 hPath(6, 2, 17) // main avenue
-vPath(home.doorCol, 5, 6) // HOME door -> avenue
-vPath(gym.doorCol, 5, 6) // GYM door -> avenue
-vPath(lab.doorCol, 5, 14) // LAB door -> avenue -> town exit at the bottom
+vPath(lab.doorCol, 6, 14) // LAB door -> avenue -> town exit at the bottom
 hPath(12, center.doorCol, mart.doorCol) // lower walkway in front of CONTACT/LINKS
 
 // resolve path cells into autotile variants (off-map neighbours count as path
@@ -78,12 +77,12 @@ for (let r = 0; r < MAP_H; r++) {
   }
 }
 
-// ---- fountain (2x2 pond, west of the LAB path) + welcome sign ----
-objects.push({ key: 'fountain', col: 8, row: 9, w: 2, h: 2, solid: 'box' })
+// ---- fountain (2x2 pond, east of the LAB path) + welcome sign ----
+objects.push({ key: 'fountain', col: 10, row: 9, w: 2, h: 2, solid: 'box' })
 
-objects.push({ key: 'sign_town', col: 8, row: 13, w: 2, h: 1, solid: 'box' })
-set(interaction, 8, 13, INT.SIGN)
-set(interaction, 9, 13, INT.SIGN)
+objects.push({ key: 'sign_town', col: 10, row: 13, w: 2, h: 1, solid: 'box' })
+set(interaction, 10, 13, INT.SIGN)
+set(interaction, 11, 13, INT.SIGN)
 
 // ---- border: foliage along the top, pine columns on the sides, fence below ----
 for (let c = 0; c < MAP_W; c++) set(ground, c, 0, T.TREETOP)
@@ -117,10 +116,10 @@ const flowerBeds = [
   [12, 2, T.FLOWERS], [12, 4, T.FLOWERS2],
   [2, 5, T.FLOWERS], [17, 5, T.FLOWERS2],
   [7, 5, T.FLOWERS2], [13, 5, T.FLOWERS],
-  [7, 8, T.FLOWERS], [11, 9, T.FLOWERS2],
+  [7, 8, T.FLOWERS], [12, 9, T.FLOWERS2],
   [7, 11, T.FLOWERS2], [12, 10, T.FLOWERS],
   [2, 13, T.FLOWERS], [17, 13, T.FLOWERS2],
-  [11, 13, T.FLOWERS],
+  [13, 13, T.FLOWERS],
 ]
 for (const [c, r, t] of flowerBeds) {
   if (ground[r][c] === T.GRASS) set(ground, c, r, t)
@@ -165,4 +164,4 @@ placeNpc(6, 6, INT.NPC1) // on the avenue, west of the LAB path
 placeNpc(14, 6, INT.NPC2) // on the avenue, near the GYM
 
 export const mapData = { ground, collision, interaction, objects }
-export const SPAWN = { col: 10, row: 8 } // on the central path below the avenue
+export const SPAWN = { col: 8, row: 8 } // on the central path below the avenue

@@ -40,6 +40,26 @@
 - [x] npm run build passes
 - [x] Final verify
 
+## Part 7: HGSS sprites from The Spriters Resource
+
+- [x] Phase 1 — download sheets (Ethan, Trainers OW, emotions, text-boxes;
+      site's old /sheet & /download URLs are dead — assets live at
+      /media/assets/<bucket>/<id>.png, resolved from each /asset/<id>/ page)
+- [x] Phase 2 — player.png from Ethan walk cycle (4 dirs x 3 frames,
+      color-keyed, row-baseline anchored); npcs.png = professor + Silver
+- [x] Phase 3 — buildings from "Sinnoh Tiles (Outdoor)" by Kyledove & Speed
+      (HGSS section has no tileset rips): blue house -> HOME, teal house ->
+      LAB, green warehouse -> GYM, orange dome -> CENTER, blue dome -> MART.
+      Top building row moved down 1 (rows 2-5) for the taller roofs; doors
+      are data-driven per building; fountain/sign shifted east off the new
+      lab path (col 8); spawn -> (8,8)
+- [x] Phase 4 — ground tiles consciously kept (no clean HGSS source exists;
+      current Tuxemon-graded tiles already match the reference)
+- [x] Phase 5 — ATTRIBUTION.md rewritten (Nintendo rips + Kyledove/Speed
+      credit), build green, smoke test: town/door-modal/NPC-dialogue shots,
+      zero console errors
+- [x] Bonus — HGSS "!" emote bubble replaces the hand-drawn indicator
+
 ## Review
 
 All 6 parts implemented and verified (build + headless-browser smoke).

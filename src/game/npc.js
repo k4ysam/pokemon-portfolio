@@ -1,5 +1,5 @@
 // NPC data. Positions mirror the placeNpc() calls in mapData.js.
-// `sprite` indexes a 16x24 frame in npcs.png.
+// `sprite` indexes a CHAR_W x CHAR_H cell in npcs.png (0 professor, 1 Silver).
 
 import { INT } from './constants.js'
 

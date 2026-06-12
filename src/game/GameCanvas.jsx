@@ -10,7 +10,7 @@ import { createGameLoop, loadImage } from './gameLoop.js'
 
 const BASE_W = MAP_W * TILE // 320
 const BASE_H = MAP_H * TILE // 240
-const ASSET_VERSION = 4
+const ASSET_VERSION = 6
 
 // GameCanvas owns the canvas + render loop. `pausedRef` halts player updates
 // while UI overlays are open. `engineRef` is populated so the parent can query

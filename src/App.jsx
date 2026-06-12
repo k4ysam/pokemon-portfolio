@@ -13,12 +13,12 @@ const BASE_H = MAP_H * TILE
 
 // Building label signs — centered over each building's roof (tile coords).
 const LABELS = [
-  { text: 'HOME', cx: 3.5, top: 1 },
-  { text: 'LAB', cx: 9.5, top: 1 },
-  { text: 'GYM', cx: 15.5, top: 1 },
+  { text: 'HOME', cx: 3.5, top: 2 },
+  { text: 'LAB', cx: 9.5, top: 2 },
+  { text: 'GYM', cx: 15.5, top: 2 },
   { text: 'CONTACT', cx: 4.5, top: 8 },
   { text: 'LINKS', cx: 15.5, top: 8 },
-  { text: 'SAMAKSH TOWN', cx: 9, top: 13.1, size: 2.2 },
+  { text: 'SAMAKSH TOWN', cx: 11, top: 13.1, size: 2.2 },
 ]
 
 export default function App() {

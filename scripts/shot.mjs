@@ -22,16 +22,19 @@ await p.screenshot({ path: 'shot_town.png' })
 const tap = async (k, n = 1) => {
   for (let i = 0; i < n; i++) {
     await p.keyboard.down(k)
-    await new Promise((r) => setTimeout(r, 40))
+    await new Promise((r) => setTimeout(r, 60))
     await p.keyboard.up(k)
-    await new Promise((r) => setTimeout(r, 180))
+    await new Promise((r) => setTimeout(r, 300))
   }
 }
 
-// spawn (10,8). Go up to avenue (row7), left to HOME door col4, up to door.
-await tap('ArrowUp', 1) // -> row7
-await tap('ArrowLeft', 6) // col10 -> col4
-await tap('ArrowUp', 2) // row7 -> row5 (approach below door at row4)
+// spawn (8,8). Walk row 7 (below the avenue, dodging NPC1 at (6,6)) to the
+// HOME door column, then step up to (2,6) and face the door at (2,5).
+await tap('ArrowUp', 1) // -> (8,7)
+await tap('ArrowLeft', 5) // -> (3,7)  (a shrub blocks (2,7))
+await tap('ArrowUp', 1) // -> (3,6) on the avenue
+await tap('ArrowLeft', 1) // -> (2,6) below the HOME door
+await tap('ArrowUp', 1) // face the door at (2,5) (blocked, turns up)
 await new Promise((r) => setTimeout(r, 150))
 await p.keyboard.press('Space')
 await new Promise((r) => setTimeout(r, 900))
@@ -39,11 +42,10 @@ await p.screenshot({ path: 'shot_home.png' })
 await p.keyboard.press('Escape')
 await new Promise((r) => setTimeout(r, 400))
 
-// back down to avenue, to NPC1 at (6,6): stand (6,7) facing up
-await tap('ArrowDown', 2) // row5 -> row7
-await tap('ArrowRight', 2) // col4 -> col6
-await tap('ArrowUp', 1) // face up toward NPC at (6,6)
+// along the avenue to NPC1 at (6,6): stop at (5,6) facing right
+await tap('ArrowRight', 4) // 4th tap blocked by the NPC -> stand (5,6) facing right
 await new Promise((r) => setTimeout(r, 150))
+await p.screenshot({ path: 'shot_emote.png' }) // "!" bubble above the player
 await p.keyboard.press('Space')
 await new Promise((r) => setTimeout(r, 900))
 await p.screenshot({ path: 'shot_npc.png' })

@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-"""Pack Tuxemon source art into the game's runtime assets.
+﻿#!/usr/bin/env python3
+"""Pack source art into the game's runtime assets.
 
 Reads source tilesets/sprites from scripts/assets-src/ and emits:
   public/assets/tileset.png   16x16 ground + small "tall" tiles (linear ids, 8 cols)
@@ -8,10 +8,14 @@ Reads source tilesets/sprites from scripts/assets-src/ and emits:
   public/assets/npcs.png      one down-facing overworld frame per NPC
 
 Run:  python scripts/pack-assets.py
-Source art: Tuxemon (CC BY-SA / GPL). See scripts/assets-src/ATTRIBUTION.md.
+Sources (see scripts/assets-src/ATTRIBUTION.md):
+  Tuxemon (CC BY-SA / GPL)            ground tiles, trees
+  HGSS rips (spriters-resource)       player + NPC overworld sprites
+  Sinnoh Tiles by Kyledove & Speed    buildings (custom, credit required)
 """
 from __future__ import annotations
 
+import collections
 import os
 
 from PIL import Image
@@ -26,6 +30,21 @@ CHAR_W, CHAR_H = 24, 32  # overworld character frame
 
 proto = Image.open(os.path.join(SRC, "prototyping_outdoor.png")).convert("RGBA")
 bld = Image.open(os.path.join(SRC, "core_buildings.png")).convert("RGBA")
+ethan = Image.open(os.path.join(SRC, "hgss", "ethan.png")).convert("RGBA")
+trainers = Image.open(os.path.join(SRC, "hgss", "trainers-overworld.png")).convert("RGBA")
+sinnoh = Image.open(os.path.join(SRC, "hgss", "sinnoh-tiles-outdoor.png")).convert("RGBA")
+emotions = Image.open(os.path.join(SRC, "hgss", "emotions.png")).convert("RGBA")
+
+
+def keyed(sheet, x0, y0, x1, y1, bg):
+    """Crop the inclusive box and turn the flat background color transparent."""
+    fr = sheet.crop((x0, y0, x1 + 1, y1 + 1))
+    px = fr.load()
+    for yy in range(fr.height):
+        for xx in range(fr.width):
+            if px[xx, yy][:3] == bg[:3]:
+                px[xx, yy] = (0, 0, 0, 0)
+    return fr
 
 
 def ptile(c, r):
@@ -201,28 +220,47 @@ for i, t in enumerate(tiles):
 tileset.save(os.path.join(OUT, "tileset.png"))
 
 # ---------------------------------------------------------------- buildings
-# Distinct buildings straight from core_buildings.png (no recolouring):
-#   red-roof cabin (Tilemap 0 section)      -> HOME
-#   blue storefront                          -> LAB
-#   yellow storefront                        -> GYM
-#   red storefront with "+" medallion        -> CENTER (contact)
-#   green storefront with "+" medallion      -> MART (links)
-# All stamps are 5x4 tiles with the door at local tile (3, 3).
+# Gen-4 style buildings from the Sinnoh Tiles (Outdoor) custom sheet by
+# Kyledove & Speed (credit required — see ATTRIBUTION.md):
+#   blue gable house    -> HOME      teal gable house     -> LAB
+#   green warehouse     -> GYM       orange Pokeball dome -> CENTER
+#   blue Mart dome      -> MART
+# Every stamp is padded to 80px (5 tiles) wide and bottom-anchored; heights
+# vary (tall roofs y-sort over whatever stands behind them). The door column
+# differs per sprite, so each entry carries its own door tile.
 
-# The cabin isn't tile-aligned in the sheet: crop a generous box, trim to the
-# sprite via bbox, then pad to 80x80 (bottom-anchored, centred) so it shares
-# the storefronts' 5-wide footprint with the door at local col 3.
-_cab = bld.crop((186, 312, 270, 402))
-_cab = _cab.crop(_cab.getbbox())
-home_cab = Image.new("RGBA", (80, 80), (0, 0, 0, 0))
-home_cab.alpha_composite(_cab, ((80 - _cab.width) // 2, 80 - _cab.height))
+
+def sin_stamp(x, y, w, h, pad_left):
+    """Crop a building from the white-bg Sinnoh sheet and make the exterior
+    white transparent (flood fill from a 1px margin, so white *windows* etc.
+    inside the silhouette are kept), then left-pad into an 80px-wide cell."""
+    box = sinnoh.crop((x - 1, y - 1, x + w + 1, y + h + 1))
+    px = box.load()
+    bw, bh = box.size
+    queue = collections.deque(
+        [(xx, 0) for xx in range(bw)] + [(xx, bh - 1) for xx in range(bw)]
+        + [(0, yy) for yy in range(bh)] + [(bw - 1, yy) for yy in range(bh)]
+    )
+    while queue:
+        cx, cy = queue.popleft()
+        if not (0 <= cx < bw and 0 <= cy < bh):
+            continue
+        if px[cx, cy][:3] != (255, 255, 255) or px[cx, cy][3] == 0:
+            continue
+        px[cx, cy] = (0, 0, 0, 0)
+        queue.extend(((cx - 1, cy), (cx + 1, cy), (cx, cy - 1), (cx, cy + 1)))
+    cell = Image.new("RGBA", (80, h), (0, 0, 0, 0))
+    cell.alpha_composite(box.crop((1, 1, 1 + w, 1 + h)), (pad_left, 0))
+    return cell
+
 
 BUILDINGS = {
-    "home":   (home_cab, 3, 3),
-    "lab":    (bcrop(10, 5, 15, 9),   3, 3),
-    "gym":    (bcrop(15, 5, 20, 9),   3, 3),
-    "center": (bcrop(20, 5, 25, 9),   3, 3),
-    "mart":   (bcrop(25, 5, 30, 9),   3, 3),
+    # name: (stamp, doorLocalCol, doorLocalRow)
+    "home":   (sin_stamp(263, 71, 80, 95, 0),    1, 3),
+    "lab":    (sin_stamp(347, 70, 80, 94, 0),    1, 3),
+    "gym":    (sin_stamp(807, 404, 77, 67, 1),   2, 3),
+    "center": (sin_stamp(434, 145, 78, 81, 2),   2, 3),
+    "mart":   (sin_stamp(366, 255, 62, 62, 18),  2, 3),
 }
 
 # ---------------------------------------------------------------- trees
@@ -315,6 +353,8 @@ OBJ.append(("pine_big", pine_big))
 OBJ.append(("tree_round", tree_round))
 OBJ.append(("fountain", fountain))
 OBJ.append(("sign_town", sign_town))
+# HGSS "!" speech-bubble emote (interaction indicator above the player)
+OBJ.append(("emote_excl", keyed(emotions, 4, 21, 18, 36, emotions.getpixel((0, 0)))))
 
 oh = max(im.height for _, im in OBJ)
 ow = sum(im.width for _, im in OBJ)
@@ -343,148 +383,51 @@ with open(os.path.join(ROOT, "src", "game", "objectAtlas.js"), "w") as f:
     f.write("}\n")
 
 # ---------------------------------------------------------------- characters
-# Hand-drawn HGSS-style mini trainers (Tuxemon has no overworld walk sheets).
-# 13x19 px sprites from ASCII templates; 4 directions x 3 walk frames.
-SPR_W, SPR_H = 13, 19
-
-# head + torso (13 rows); legs (6 rows) appended per frame
-HEAD_FRONT = [
-    ".....CCCC....",
-    "...CCCCCCC...",
-    "..CCCCCCCCC..",
-    "..ccccccccc..",
-    "..HHHHHHHHH..",
-    "..HFFFFFFFH..",
-    "..HFEFFFEFH..",
-    "...FFFFFFF...",
-    "....SSSSS....",
-    "..SSSSSSSSS..",
-    ".SSSSSSSSSSS.",
-    ".FSSSSSSSSSF.",
-    "...SSSSSSS...",
-]
-HEAD_BACK = [
-    ".....CCCC....",
-    "...CCCCCCC...",
-    "..CCCCCCCCC..",
-    "..CCCCCCCCC..",
-    "..HHHHHHHHH..",
-    "..HHHHHHHHH..",
-    "..HHHHHHHHH..",
-    "...HHHHHHH...",
-    "....SSSSS....",
-    "..SSSSSSSSS..",
-    ".SSSSSSSSSSS.",
-    ".FSSSSSSSSSF.",
-    "...SSSSSSS...",
-]
-HEAD_LEFT = [
-    ".....CCCC....",
-    "...CCCCCCC...",
-    "..CCCCCCCCC..",
-    "..cccccCCCC..",
-    "..HHHHHHHHH..",
-    "..HFFFFFHHH..",
-    "..HFEFFFHHH..",
-    "...FFFFFHH...",
-    "....SSSSS....",
-    "...SSSSSSS...",
-    "..SSSSSSSSS..",
-    "..FSSSSSSSS..",
-    "...SSSSSSS...",
-]
-LEGS_IDLE = [
-    "...PPPPPPP...",
-    "...PPPPPPP...",
-    "...PP...PP...",
-    "...PP...PP...",
-    "...BB...BB...",
-    "..BBB...BBB..",
-]
-LEGS_SIDE = [
-    "...PPPPPPP...",
-    "...PPPPPPP...",
-    "....PP.PP....",
-    "....PP.PP....",
-    "....BB.BB....",
-    "...BBB.BBB...",
-]
+# Authentic HGSS overworld sprites (ripped sheets, see ATTRIBUTION.md):
+# Ethan's walk cycle for the player; the scientist (Prof. Elm style) and
+# Silver from the trainers sheet as the two town NPCs.
+#
+# The rips are irregular: frames are color-keyed on the sheet's background
+# and bottom-anchored per row on the row's common baseline, so the walking
+# stride extends slightly below the idle feet exactly like the source rows.
 
 
-def pixel_sprite(rows, pal):
-    im = Image.new("RGBA", (SPR_W, SPR_H), (0, 0, 0, 0))
-    px = im.load()
-    for y, row in enumerate(rows):
-        for x, ch in enumerate(row):
-            c = pal.get(ch)
-            if c:
-                px[x, y] = (*c, 255)
-    return im
-
-
-def to_cell(im, dy=0):
+def cellify(fr, bottom_gap=0):
+    """Centre a frame in a CHAR_W x CHAR_H cell, feet bottom_gap px above the
+    cell's bottom edge."""
     cell = Image.new("RGBA", (CHAR_W, CHAR_H), (0, 0, 0, 0))
-    cell.alpha_composite(im, ((CHAR_W - SPR_W) // 2, CHAR_H - SPR_H + dy))
+    cell.alpha_composite(fr, ((CHAR_W - fr.width) // 2, CHAR_H - fr.height - bottom_gap))
     return cell
 
 
-def step_frame(idle, lift_left):
-    """Walk frame: body bobs up 1px and one foot lifts (its bottom rows clear)."""
-    im = Image.new("RGBA", (SPR_W, SPR_H), (0, 0, 0, 0))
-    im.alpha_composite(idle, (0, -1))
-    px = im.load()
-    half = SPR_W // 2
-    xs = range(0, half) if lift_left else range(half, SPR_W)
-    for y in (SPR_H - 1, SPR_H - 2):
-        for x in xs:
-            px[x, y] = (0, 0, 0, 0)
-    return im
-
-
-def trainer_sheet(colors, cap=True):
-    """4-dir x 3-frame CHAR_W x CHAR_H sheet. Rows: DOWN, UP, LEFT, RIGHT."""
-    pal = dict(colors)
-    if not cap:  # bare head: hair replaces the cap
-        pal["C"] = pal["H"]
-        pal["c"] = pal["H"]
-    front = pixel_sprite(HEAD_FRONT + LEGS_IDLE, pal)
-    back = pixel_sprite(HEAD_BACK + LEGS_IDLE, pal)
-    left = pixel_sprite(HEAD_LEFT + LEGS_SIDE, pal)
-    right = left.transpose(Image.FLIP_LEFT_RIGHT)
-    sheet = Image.new("RGBA", (3 * CHAR_W, 4 * CHAR_H), (0, 0, 0, 0))
-    for r, idle in enumerate([front, back, left, right]):
-        frames = [step_frame(idle, True), idle, step_frame(idle, False)]
-        for col, fr in enumerate(frames):
-            sheet.alpha_composite(to_cell(fr), (col * CHAR_W, r * CHAR_H))
-    return sheet
-
-
-PLAYER_COLORS = {  # red cap, blue shirt — classic trainer
-    "C": (214, 56, 50), "c": (150, 32, 30), "H": (56, 42, 36),
-    "F": (244, 205, 168), "E": (38, 38, 48), "S": (58, 108, 196),
-    "P": (62, 62, 76), "B": (74, 52, 46),
-}
-NPC_COLORS = [
-    {  # NPC1: brown-haired, green shirt
-        "C": (0, 0, 0), "c": (0, 0, 0), "H": (110, 74, 44),
-        "F": (240, 198, 160), "E": (38, 38, 48), "S": (92, 152, 92),
-        "P": (96, 78, 60), "B": (70, 52, 44),
-    },
-    {  # NPC2: red-haired, rose shirt
-        "C": (0, 0, 0), "c": (0, 0, 0), "H": (182, 74, 52),
-        "F": (246, 206, 170), "E": (38, 38, 48), "S": (204, 96, 116),
-        "P": (90, 90, 104), "B": (76, 56, 50),
-    },
+ETHAN_BG = ethan.getpixel((0, 0))
+# Inclusive frame boxes per output row (DIR order: DOWN, UP, LEFT, RIGHT);
+# columns are (step, idle, step) to match player.frameCol semantics.
+ETHAN_FRAMES = [
+    [(7, 5, 23, 29), (26, 5, 42, 27), (45, 5, 61, 29)],        # down
+    [(6, 61, 22, 85), (27, 61, 43, 83), (49, 61, 65, 85)],     # up
+    [(5, 33, 23, 56), (26, 34, 44, 56), (47, 34, 65, 56)],     # left
+    [(5, 89, 23, 111), (26, 89, 44, 111), (47, 89, 65, 112)],  # right
 ]
 
-player_sheet = trainer_sheet(PLAYER_COLORS, cap=True)
+player_sheet = Image.new("RGBA", (3 * CHAR_W, 4 * CHAR_H), (0, 0, 0, 0))
+for r, frames in enumerate(ETHAN_FRAMES):
+    baseline = max(b[3] for b in frames)
+    for c, (x0, y0, x1, y1) in enumerate(frames):
+        fr = keyed(ethan, x0, y0, x1, y1, ETHAN_BG)
+        player_sheet.alpha_composite(cellify(fr, baseline - y1), (c * CHAR_W, r * CHAR_H))
 player_sheet.save(os.path.join(OUT, "player.png"))
 
-# NPCs: one down-facing idle frame each, packed left-to-right
-npc_sheet = Image.new("RGBA", (len(NPC_COLORS) * CHAR_W, CHAR_H), (0, 0, 0, 0))
-for i, colors in enumerate(NPC_COLORS):
-    fr = trainer_sheet(colors, cap=False)
-    npc_sheet.alpha_composite(fr.crop((CHAR_W, 0, 2 * CHAR_W, CHAR_H)), (i * CHAR_W, 0))
+# NPCs: one down-facing idle frame each; each block of the trainers sheet has
+# its own background color, so the key color rides along with the box.
+NPC_FRAMES = [
+    ((40, 6, 53, 29), (120, 136, 152)),     # scientist / professor
+    ((166, 36, 184, 61), (88, 144, 112)),   # Silver (rival)
+]
+npc_sheet = Image.new("RGBA", (len(NPC_FRAMES) * CHAR_W, CHAR_H), (0, 0, 0, 0))
+for i, ((x0, y0, x1, y1), npc_bg) in enumerate(NPC_FRAMES):
+    fr = keyed(trainers, x0, y0, x1, y1, npc_bg)
+    npc_sheet.alpha_composite(cellify(fr, 2), (i * CHAR_W, 0))
 npc_sheet.save(os.path.join(OUT, "npcs.png"))
 
 print("Packed assets:")
@@ -492,3 +435,4 @@ for fn in ("tileset.png", "objects.png", "player.png", "npcs.png"):
     p = os.path.join(OUT, fn)
     print(f"  {fn}: {Image.open(p).size}")
 print("Object rects:", list(rects.keys()))
+

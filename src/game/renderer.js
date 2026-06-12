@@ -91,14 +91,11 @@ export function drawScene(ctx, assets, state) {
   drawables.sort((a, b) => a.baseY - b.baseY)
   for (const d of drawables) d.draw()
 
-  // --- "!" interaction indicator above the player's head ---
+  // --- "!" interaction indicator (HGSS emote bubble) above the player ---
   if (facingTarget) {
-    const bx = player.pixelX + 6
-    const by = player.pixelY - CHAR_H + TILE - 8
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(bx, by, 6, 8)
-    ctx.fillStyle = '#e23b3b'
-    ctx.fillRect(bx + 2, by + 1, 2, 4)
-    ctx.fillRect(bx + 2, by + 6, 2, 2)
+    const [sx, sy, sw, sh] = OBJ_RECTS.emote_excl
+    const bx = player.pixelX + ((TILE - sw) / 2 | 0)
+    const by = player.pixelY - CHAR_H + 6
+    ctx.drawImage(objSheet, sx, sy, sw, sh, bx, by, sw, sh)
   }
 }
