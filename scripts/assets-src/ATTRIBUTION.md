@@ -35,6 +35,18 @@ copyright holders.
   https://www.spriters-resource.com/custom_edited/pokemoncustoms/asset/24115/
   Used for the five town buildings (houses, gym warehouse, Center/Mart domes).
 
+## PMD SpriteCollab (wandering Pokémon)
+
+Overworld walk animations from **PMDCollab SpriteCollab**
+(https://github.com/PMDCollab/SpriteCollab), the community sprite repository
+for Pokémon Mystery Dungeon (sprites © Nintendo / Creatures / GAME FREAK /
+Spike Chunsoft; collab assets CC BY-NC 4.0). Used in a non-commercial
+personal fan/portfolio project.
+
+- `pmd/0025-Walk-Anim.png` — Pikachu
+- `pmd/0133-Walk-Anim.png` — Eevee
+- `pmd/0393-Walk-Anim.png` — Piplup
+
 ## Original art
 
 The stone fountain and the welcome sign board are original pixel art generated

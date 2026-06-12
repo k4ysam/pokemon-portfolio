@@ -56,9 +56,8 @@ block(4, 6, 4, 6)     # HOME sign posts
 block(8, 5, 8, 6)     # mailbox between HOME and LAB
 block(3, 14, 3, 14)   # posts left of CONTACT
 block(3, 10, 3, 10)   # flowers left of CONTACT roof
-block(8, 8, 8, 8)     # NPC1
-block(16, 8, 16, 8)   # NPC2
 block(0, 19, 24, 19)  # bottom map edge
+# NPCs/Pokemon wander dynamically (npc.js) — not baked into the grid
 
 # fountain ring (corner bushes overlap slightly but stay passable) +
 # path under the elevated welcome sign + south exit

@@ -27,14 +27,10 @@ export function createPlayer() {
   }
 }
 
-function canWalk(collision, c, r) {
-  if (c < 0 || r < 0 || c >= MAP_W || r >= MAP_H) return false
-  return collision[r][c] === 0
-}
-
-// Advance the player. `wantDir` is the currently-held direction (or null).
+// Advance the player. `wantDir` is the currently-held direction (or null);
+// `isBlocked(c, r)` covers the map collision plus dynamic occupants.
 // Returns nothing; mutates player + writes derived render fields.
-export function updatePlayer(player, dt, wantDir, collision) {
+export function updatePlayer(player, dt, wantDir, isBlocked) {
   if (player.moving) {
     player.progress += dt / MOVE_MS
     if (player.progress >= 1) {
@@ -52,7 +48,7 @@ export function updatePlayer(player, dt, wantDir, collision) {
     const [dc, dr] = DELTA[wantDir]
     const tc = player.col + dc
     const tr = player.row + dr
-    if (canWalk(collision, tc, tr)) {
+    if (tc >= 0 && tr >= 0 && tc < MAP_W && tr < MAP_H && !isBlocked(tc, tr)) {
       player.fromCol = player.col
       player.fromRow = player.row
       player.col = tc

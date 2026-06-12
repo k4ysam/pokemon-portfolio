@@ -21,7 +21,7 @@ const COLLISION_ROWS = [
   '1111111110111111111111101',
   '1111100010110111011011001',
   '1110000000000000000001001',
-  '1110000010000000100000001',
+  '1110000000000000000000001',
   '1100000000000000000000001',
   '1111011111000000111110001',
   '1110011111000001111111011',
@@ -54,8 +54,7 @@ set(18, 14, INT.MART) // LINKS door
 set(11, 16, INT.SIGN) // welcome sign (faced from the exit path)
 set(12, 16, INT.SIGN)
 set(13, 16, INT.SIGN)
-set(8, 8, INT.NPC1)
-set(16, 8, INT.NPC2)
+// NPCs/Pokemon are dynamic — collision + interaction come from npc.js
 
 // Background sub-rects (px) re-drawn over the sprites so the player passes
 // behind them: the elevated welcome sign board + posts over the south exit.

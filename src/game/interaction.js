@@ -1,8 +1,8 @@
 // Resolve what the player is facing into a UI action.
 
-import { MAP_W, MAP_H, INT } from './constants.js'
+import { MAP_W, MAP_H, INT, DIR } from './constants.js'
 import { facingTile } from './player.js'
-import { npcById } from './npc.js'
+import { wandererAt } from './npc.js'
 
 // Map building interaction ids -> the modal content key (or a placeholder dialogue).
 const BUILDINGS = {
@@ -17,24 +17,34 @@ const BUILDINGS = {
   },
 }
 
+const FACE_PLAYER = {
+  [DIR.UP]: DIR.DOWN,
+  [DIR.DOWN]: DIR.UP,
+  [DIR.LEFT]: DIR.RIGHT,
+  [DIR.RIGHT]: DIR.LEFT,
+}
+
 // Is the tile the player faces interactable? (used for the "!" indicator)
 export function facingInteractable(player, map) {
   const { col, row } = facingTile(player)
   if (col < 0 || row < 0 || col >= MAP_W || row >= MAP_H) return false
-  return map.interaction[row][col] !== 0
+  return map.interaction[row][col] !== 0 || wandererAt(col, row) !== null
 }
 
 // Resolve the facing interaction into a descriptor the UI router can act on.
 export function resolveInteraction(player, map) {
   const { col, row } = facingTile(player)
   if (col < 0 || row < 0 || col >= MAP_W || row >= MAP_H) return null
+
+  const w = wandererAt(col, row)
+  if (w) {
+    w.dir = FACE_PLAYER[player.dir] // turn toward the player
+    w.frameCol = 1
+    return { kind: 'dialogue', name: w.id, lines: w.lines }
+  }
+
   const id = map.interaction[row][col]
   if (!id) return null
-
-  if (id === INT.NPC1 || id === INT.NPC2) {
-    const npc = npcById(id)
-    return npc ? { kind: 'dialogue', name: npc.id, lines: npc.lines } : null
-  }
   if (id === INT.SIGN) {
     return {
       kind: 'dialogue',

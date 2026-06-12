@@ -16,7 +16,12 @@ export const CHAR_SCALE = 2
 // Direction indices — must match player.png / npcs.png row order.
 export const DIR = { DOWN: 0, UP: 1, LEFT: 2, RIGHT: 3 }
 
-// Interaction trigger IDs (interaction[][] values).
+// Pokemon overworld frame size in pokemon.png (see pack-assets.py).
+export const POKE_W = 32
+export const POKE_H = 32
+
+// Interaction trigger IDs (interaction[][] values; NPC/MON ids are carried by
+// the wanderers themselves, not the grid).
 export const INT = {
   HOUSE: 1, // about
   LAB: 2, // skills
@@ -26,4 +31,7 @@ export const INT = {
   SIGN: 6, // town sign
   NPC1: 10,
   NPC2: 11,
+  MON1: 12,
+  MON2: 13,
+  MON3: 14,
 }

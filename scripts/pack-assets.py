@@ -418,20 +418,66 @@ for r, frames in enumerate(ETHAN_FRAMES):
         player_sheet.alpha_composite(cellify(fr, baseline - y1), (c * CHAR_W, r * CHAR_H))
 player_sheet.save(os.path.join(OUT, "player.png"))
 
-# NPCs: one down-facing idle frame each; each block of the trainers sheet has
-# its own background color, so the key color rides along with the box.
-NPC_FRAMES = [
-    ((40, 6, 53, 29), (120, 136, 152)),     # scientist / professor
-    ((166, 36, 184, 61), (88, 144, 112)),   # Silver (rival)
+# NPCs: full 4-dir x 3-frame walk cycles from the trainers sheet. Each
+# character occupies a 3x4 block of 32px cells on its own flat bg color.
+# Output layout matches player.png: rows DOWN/UP/LEFT/RIGHT, cols
+# (step, idle, step); blocks of 3 columns side by side per NPC.
+NPC_BLOCKS = [0, 96]  # block origin x: scientist / professor, Silver (rival)
+# (cellCol, cellRow) within a block for each output (row, col); the sheet has
+# no right-facing walk frames — Gen 4 mirrors them from the left-facing row.
+NPC_CELLS = [
+    [(2, 1), (1, 1), (2, 2)],  # down
+    [(2, 0), (0, 0), (1, 3)],  # up
+    [(0, 2), (0, 1), (0, 3)],  # left
+    [(0, 2), (0, 1), (0, 3)],  # right (mirrored left)
 ]
-npc_sheet = Image.new("RGBA", (len(NPC_FRAMES) * CHAR_W, CHAR_H), (0, 0, 0, 0))
-for i, ((x0, y0, x1, y1), npc_bg) in enumerate(NPC_FRAMES):
-    fr = keyed(trainers, x0, y0, x1, y1, npc_bg)
-    npc_sheet.alpha_composite(cellify(fr, 2), (i * CHAR_W, 0))
+npc_sheet = Image.new("RGBA", (len(NPC_BLOCKS) * 3 * CHAR_W, 4 * CHAR_H), (0, 0, 0, 0))
+for i, bx in enumerate(NPC_BLOCKS):
+    npc_bg = trainers.getpixel((bx + 1, 1))
+    for r, cells in enumerate(NPC_CELLS):
+        for c, (cc, cr) in enumerate(cells):
+            fr = keyed(trainers, bx + cc * 32, cr * 32, bx + cc * 32 + 31, cr * 32 + 31, npc_bg)
+            fr = fr.crop(fr.getbbox())
+            if r == 3:
+                fr = fr.transpose(Image.FLIP_LEFT_RIGHT)
+            npc_sheet.alpha_composite(cellify(fr, 2), ((i * 3 + c) * CHAR_W, r * CHAR_H))
 npc_sheet.save(os.path.join(OUT, "npcs.png"))
 
+# ---------------------------------------------------------------- pokemon
+# Wandering overworld Pokemon from PMD SpriteCollab (see ATTRIBUTION.md):
+# scripts/assets-src/pmd/<id>-Walk-Anim.png is FrameWidth x FrameHeight cells,
+# 8 direction rows (0 = down, clockwise), variable frame count per row.
+# Output pokemon.png mirrors the NPC layout with 32x32 cells.
+import re
+
+POKE = 32
+PMD_IDS = ["0025", "0133", "0393"]  # Pikachu, Eevee, Piplup
+PMD_DIR_ROWS = [0, 4, 6, 2]  # PMD row for our DOWN/UP/LEFT/RIGHT
+
+poke_sheet = Image.new("RGBA", (len(PMD_IDS) * 3 * POKE, 4 * POKE), (0, 0, 0, 0))
+for i, pid in enumerate(PMD_IDS):
+    walk = Image.open(os.path.join(SRC, "pmd", f"{pid}-Walk-Anim.png")).convert("RGBA")
+    xml = open(os.path.join(SRC, "pmd", f"{pid}-AnimData.xml")).read()
+    m = re.search(r"<Name>Walk</Name>.*?<FrameWidth>(\d+)</FrameWidth>\s*<FrameHeight>(\d+)</FrameHeight>", xml, re.S)
+    fw, fh = int(m.group(1)), int(m.group(2))
+    nf = walk.width // fw
+    frame_cols = [max(1, nf // 4), 0, (3 * nf) // 4]  # (step, idle, step)
+    for r, pmd_row in enumerate(PMD_DIR_ROWS):
+        for c, f in enumerate(frame_cols):
+            fr = walk.crop((f * fw, pmd_row * fh, (f + 1) * fw, (pmd_row + 1) * fh))
+            fr = fr.crop(fr.getbbox())
+            if fr.width > POKE:
+                x0 = (fr.width - POKE) // 2
+                fr = fr.crop((x0, 0, x0 + POKE, fr.height))
+            if fr.height > POKE:
+                fr = fr.crop((0, fr.height - POKE, fr.width, fr.height))
+            cell = Image.new("RGBA", (POKE, POKE), (0, 0, 0, 0))
+            cell.alpha_composite(fr, ((POKE - fr.width) // 2, POKE - fr.height - 1))
+            poke_sheet.alpha_composite(cell, ((i * 3 + c) * POKE, r * POKE))
+poke_sheet.save(os.path.join(OUT, "pokemon.png"))
+
 print("Packed assets:")
-for fn in ("tileset.png", "objects.png", "player.png", "npcs.png"):
+for fn in ("tileset.png", "objects.png", "player.png", "npcs.png", "pokemon.png"):
     p = os.path.join(OUT, fn)
     print(f"  {fn}: {Image.open(p).size}")
 print("Object rects:", list(rects.keys()))
