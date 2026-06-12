@@ -6,10 +6,6 @@ import DPad from './ui/DPad.jsx'
 import IntroSequence from './ui/IntroSequence.jsx'
 import { CONTENT } from './content/index.js'
 import { attachInput, onAction, onClose, clearHeld } from './game/input.js'
-import { MAP_W, MAP_H, TILE } from './game/constants.js'
-
-const BASE_W = MAP_W * TILE
-const BASE_H = MAP_H * TILE
 
 export default function App() {
   const [mode, setMode] = useState('intro') // intro | town | dialogue | modal
@@ -17,7 +13,7 @@ export default function App() {
   const [modalData, setModalData] = useState(null)
   const [advance, setAdvance] = useState(0)
   const [modalClose, setModalClose] = useState(0)
-  const [stage, setStage] = useState({ w: BASE_W, h: BASE_H, scale: 1 })
+  const [stage, setStage] = useState({ w: window.innerWidth, h: window.innerHeight, scale: 1 })
 
   const pausedRef = useRef(true)
   const engineRef = useRef(null)
@@ -32,11 +28,10 @@ export default function App() {
     attachInput()
   }, [])
 
-  // stage sizing (letterbox-contain, keep 4:3)
+  // stage sizing — fullscreen; the canvas camera handles zoom/cropping
   useEffect(() => {
     function resize() {
-      const scale = Math.min(window.innerWidth / BASE_W, window.innerHeight / BASE_H)
-      setStage({ w: Math.round(BASE_W * scale), h: Math.round(BASE_H * scale), scale })
+      setStage({ w: window.innerWidth, h: window.innerHeight, scale: 1 })
     }
     resize()
     window.addEventListener('resize', resize)

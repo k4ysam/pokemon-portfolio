@@ -12,6 +12,9 @@ import { createGameLoop, loadImage } from './gameLoop.js'
 const BASE_W = MAP_W * TILE // 800
 const BASE_H = MAP_H * TILE // 640
 const ASSET_VERSION = 8
+// Camera viewport: ~13 tiles visible vertically (map is 20) so the view stays
+// zoomed in on the player and the town reads larger on screen.
+const VIEW_TILES_Y = 13
 
 // GameCanvas owns the canvas + render loop. `pausedRef` halts player updates
 // while UI overlays are open. `engineRef` is populated so the parent can query
@@ -22,8 +25,6 @@ export default function GameCanvas({ pausedRef, engineRef }) {
   useEffect(() => {
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d', { alpha: false })
-    canvas.width = BASE_W
-    canvas.height = BASE_H
 
     const player = createPlayer()
 
@@ -64,7 +65,14 @@ export default function GameCanvas({ pausedRef, engineRef }) {
         for (const w of WANDERERS) updateWanderer(w, dt, blockedFor(w))
       }
       const facingTarget = !paused && !player.moving && facingInteractable(player, mapData)
-      drawScene(ctx, assets, { map: mapData, player, wanderers: WANDERERS, facingTarget, showCollision })
+      // camera: centre on the player, clamped to the map edges
+      const camX = Math.round(
+        Math.max(0, Math.min(player.pixelX + TILE / 2 - canvas.width / 2, BASE_W - canvas.width))
+      )
+      const camY = Math.round(
+        Math.max(0, Math.min(player.pixelY + TILE / 2 - canvas.height / 2, BASE_H - canvas.height))
+      )
+      drawScene(ctx, assets, { map: mapData, player, wanderers: WANDERERS, facingTarget, showCollision, camX, camY })
     })
 
     // ?v= busts the browser cache whenever the assets change.
@@ -80,13 +88,17 @@ export default function GameCanvas({ pausedRef, engineRef }) {
       loop.start()
     })
 
-    // --- responsive scaling: contain 4:3 in the viewport, integer-crisp ---
+    // --- responsive scaling: zoomed camera viewport that fills the window ---
+    // The canvas backing store is the visible slice of the map in world px;
+    // CSS stretches it to 100% of the fullscreen stage. The zoom shows
+    // VIEW_TILES_Y tiles vertically but never zooms out past the map edges,
+    // so the town always covers the whole screen.
     function resize() {
       const vw = window.innerWidth
       const vh = window.innerHeight
-      const scale = Math.min(vw / BASE_W, vh / BASE_H)
-      canvas.style.width = `${Math.round(BASE_W * scale)}px`
-      canvas.style.height = `${Math.round(BASE_H * scale)}px`
+      const scale = Math.max(vh / (VIEW_TILES_Y * TILE), vw / BASE_W, vh / BASE_H)
+      canvas.width = Math.min(Math.round(vw / scale), BASE_W)
+      canvas.height = Math.min(Math.round(vh / scale), BASE_H)
     }
     resize()
     window.addEventListener('resize', resize)

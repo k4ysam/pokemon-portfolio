@@ -19,9 +19,11 @@ function drawChar(ctx, sheet, block, frameCol, dirRow, px, py, cw = CHAR_W, ch =
 
 export function drawScene(ctx, assets, state) {
   const { bg, player: playerSheet, npcs: npcSheet, pokemon: pokeSheet, objects: objSheet } = assets
-  const { map, player, wanderers, facingTarget, showCollision } = state
+  const { map, player, wanderers, facingTarget, showCollision, camX = 0, camY = 0 } = state
 
   ctx.imageSmoothingEnabled = false
+  // everything below draws in world coordinates; the camera shifts the view
+  ctx.setTransform(1, 0, 0, 1, -camX, -camY)
   ctx.drawImage(bg, 0, 0)
 
   // --- y-sorted sprites ---
