@@ -2,3 +2,8 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# Tuxemon source clone (use sparse-checkout to refetch)
+tuxemon-assets/
+# local screenshot artifacts
+shot_*.png

@@ -10,6 +10,7 @@ import { createGameLoop, loadImage } from './gameLoop.js'
 
 const BASE_W = MAP_W * TILE // 320
 const BASE_H = MAP_H * TILE // 240
+const ASSET_VERSION = 4
 
 // GameCanvas owns the canvas + render loop. `pausedRef` halts player updates
 // while UI overlays are open. `engineRef` is populated so the parent can query
@@ -44,13 +45,16 @@ export default function GameCanvas({ pausedRef, engineRef }) {
       drawScene(ctx, assets, { map: mapData, player, npcs: NPCS, facingTarget })
     })
 
+    // ?v= busts the browser cache whenever the packed assets change —
+    // bump ASSET_VERSION after running `npm run pack-assets`.
     Promise.all([
-      loadImage('assets/tileset.png'),
-      loadImage('assets/player.png'),
-      loadImage('assets/npcs.png'),
-    ]).then(([tileset, playerSheet, npcSheet]) => {
+      loadImage(`assets/tileset.png?v=${ASSET_VERSION}`),
+      loadImage(`assets/objects.png?v=${ASSET_VERSION}`),
+      loadImage(`assets/player.png?v=${ASSET_VERSION}`),
+      loadImage(`assets/npcs.png?v=${ASSET_VERSION}`),
+    ]).then(([tileset, objects, playerSheet, npcSheet]) => {
       if (disposed) return
-      assets = { tileset, player: playerSheet, npcs: npcSheet }
+      assets = { tileset, objects, player: playerSheet, npcs: npcSheet }
       loop.start()
     })
 

@@ -6,7 +6,7 @@ import { INT } from './constants.js'
 export const NPCS = [
   {
     id: INT.NPC1,
-    col: 5,
+    col: 6,
     row: 6,
     sprite: 0,
     lines: [

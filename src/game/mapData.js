@@ -1,9 +1,14 @@
-// Town map definition — 20 wide x 15 tall.
-// Three layers per spec: ground (tile ids), collision (0/1), interaction (trigger ids).
-// ground[][] holds the full visible tile id; the renderer draws FLOOR_TILES flat
-// and treats every other tile as a "tall" object for y-sorting.
+// Town map — 20 wide x 15 tall, laid out to match the reference art:
+// three buildings on top (HOME / LAB / GYM), two on the bottom (CONTACT
+// center / LINKS mart), sandy autotiled paths, a fountain, a welcome sign,
+// a picket fence along the bottom and a dense pine border all around.
+//
+// Layers: ground (tile ids), collision (0/1), interaction (trigger ids), and a
+// list of multi-tile `objects` (buildings, trees, fountain, sign) drawn from
+// objects.png and y-sorted against the player by their base row.
 
-import { MAP_W, MAP_H, T, INT, FLOOR_TILES } from './constants.js'
+import { MAP_W, MAP_H, T, INT, PATH_AUTO_BASE, WALKABLE_FLOOR } from './constants.js'
+import { BUILDING_DOORS } from './objectAtlas.js'
 
 function grid(fill) {
   return Array.from({ length: MAP_H }, () => Array.from({ length: MAP_W }, () => fill))
@@ -11,108 +16,153 @@ function grid(fill) {
 
 const ground = grid(T.GRASS)
 const interaction = grid(0)
+const isPath = grid(false)
+const objects = []
 
-// ---- helpers ----
 function set(layer, c, r, v) {
   if (r < 0 || r >= MAP_H || c < 0 || c >= MAP_W) return
   layer[r][c] = v
 }
+function rect(layer, c0, r0, c1, r1, v) {
+  for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) set(layer, c, r, v)
+}
 function hPath(r, c0, c1) {
-  for (let c = c0; c <= c1; c++) set(ground, c, r, T.PATH)
+  for (let c = c0; c <= c1; c++) set(isPath, c, r, true)
 }
 function vPath(c, r0, r1) {
-  for (let r = r0; r <= r1; r++) set(ground, c, r, T.PATH)
+  for (let r = r0; r <= r1; r++) set(isPath, c, r, true)
 }
 
-// Roof tile sets keyed by color.
-const ROOF = {
-  red: { top: T.ROOF_RED_TOP, body: T.ROOF_RED },
-  blue: { top: T.ROOF_BLUE_TOP, body: T.ROOF_BLUE },
-  gray: { top: T.ROOF_GRAY_TOP, body: T.ROOF_GRAY },
+// ---- buildings (5 wide x 4 tall stamps from objects.png) ----
+function building(key, col, row, intId) {
+  const w = 5
+  const h = 4
+  objects.push({ key, col, row, w, h, solid: 'box' })
+  const [dlc, dlr] = BUILDING_DOORS[key]
+  const doorCol = col + dlc
+  const doorRow = row + dlr
+  set(interaction, doorCol, doorRow, intId)
+  return { doorCol, doorRow }
 }
 
-// Place a 4-wide x 3-tall building. (c,r) = top-left.
-// Rows: roof-top, roof-body, wall-with-door. Door at local col `doorLC`.
-// Returns {doorCol, doorRow} for wiring interaction + approach tile.
-function building(c, r, color, doorLC, intId) {
-  const roof = ROOF[color]
-  for (let i = 0; i < 4; i++) {
-    set(ground, c + i, r, roof.top)
-    set(ground, c + i, r + 1, roof.body)
-  }
-  // wall row
-  const wallRow = r + 2
-  for (let i = 0; i < 4; i++) set(ground, c + i, wallRow, T.WALL)
-  const doorCol = c + doorLC
-  set(ground, doorCol, wallRow, T.DOOR)
-  // a window on the wall (avoid the door column)
-  const winLC = doorLC === 1 ? 2 : 1
-  set(ground, c + winLC, wallRow, T.WINDOW)
-  set(interaction, doorCol, wallRow, intId)
-  return { doorCol, doorRow: wallRow }
-}
+// top row (rows 1-4)
+const home = building('bld_home', 1, 1, INT.HOUSE)
+const lab = building('bld_lab', 7, 1, INT.LAB)
+const gym = building('bld_gym', 13, 1, INT.GYM)
+// bottom row (rows 8-11)
+const center = building('bld_center', 2, 8, INT.CENTER)
+const mart = building('bld_mart', 13, 8, INT.MART)
 
-// ---- border trees ----
-for (let c = 0; c < MAP_W; c++) {
-  set(ground, c, 0, T.TREE)
-  set(ground, c, MAP_H - 1, T.TREE)
+// ---- paths (1 tile wide; autotiled below) ----
+hPath(6, 2, 17) // main avenue
+vPath(home.doorCol, 5, 6) // HOME door -> avenue
+vPath(gym.doorCol, 5, 6) // GYM door -> avenue
+vPath(lab.doorCol, 5, 14) // LAB door -> avenue -> town exit at the bottom
+hPath(12, center.doorCol, mart.doorCol) // lower walkway in front of CONTACT/LINKS
+
+// resolve path cells into autotile variants (off-map neighbours count as path
+// so border-touching path reads as continuing off screen)
+function pathAt(c, r) {
+  if (r < 0 || r >= MAP_H || c < 0 || c >= MAP_W) return true
+  return isPath[r][c]
 }
 for (let r = 0; r < MAP_H; r++) {
-  set(ground, 0, r, T.TREE)
-  set(ground, MAP_W - 1, r, T.TREE)
+  for (let c = 0; c < MAP_W; c++) {
+    if (!isPath[r][c]) continue
+    const mask =
+      (pathAt(c, r - 1) ? 1 : 0) |
+      (pathAt(c + 1, r) ? 2 : 0) |
+      (pathAt(c, r + 1) ? 4 : 0) |
+      (pathAt(c - 1, r) ? 8 : 0)
+    ground[r][c] = PATH_AUTO_BASE + mask
+  }
 }
 
-// ---- top row buildings (rows 1-3) ----
-const house = building(2, 1, 'red', 1, INT.HOUSE) // HOME
-const lab = building(8, 1, 'blue', 1, INT.LAB) // LAB
-const gym = building(14, 1, 'gray', 1, INT.GYM) // GYM
+// ---- fountain (2x2 pond, west of the LAB path) + welcome sign ----
+objects.push({ key: 'fountain', col: 8, row: 9, w: 2, h: 2, solid: 'box' })
 
-// ---- bottom row buildings (rows 10-12) ----
-const center = building(4, 10, 'red', 1, INT.CENTER) // POKECENTER
-const mart = building(12, 10, 'blue', 1, INT.MART) // POKEMART
+objects.push({ key: 'sign_town', col: 8, row: 13, w: 2, h: 1, solid: 'box' })
+set(interaction, 8, 13, INT.SIGN)
+set(interaction, 9, 13, INT.SIGN)
 
-// ---- paths ----
-// main horizontal avenue
-hPath(7, 1, 18)
-// vertical connectors from top building doors down to the avenue
-for (const b of [house, lab, gym]) vPath(b.doorCol, b.doorRow + 1, 7)
-// central vertical connector down to the lower plaza
-vPath(10, 7, 12)
-// lower plaza walkway in front of bottom buildings
-hPath(13, 4, 15)
-// connectors from bottom doors down to the plaza walkway
-for (const b of [center, mart]) vPath(b.doorCol, b.doorRow + 1, 13)
-// link central connector into the plaza walkway
-hPath(13, 10, 13)
+// ---- border: foliage along the top, pine columns on the sides, fence below ----
+for (let c = 0; c < MAP_W; c++) set(ground, c, 0, T.TREETOP)
 
-// ---- decoration ----
-// flower beds in the open lower-center area
-const flowerSpots = [[8, 8], [9, 9], [11, 9], [8, 12], [10, 11]]
-for (const [c, r] of flowerSpots) if (ground[r][c] === T.GRASS) set(ground, c, r, T.FLOWERS)
+// stacked pines down both side columns (each canopy overlaps the pine above)
+function pine(key, trunkCol, trunkRow, w = 1) {
+  objects.push({ key, col: trunkCol, row: trunkRow - 1, w, h: 2, solid: 'base' })
+}
+for (let r = 1; r <= 12; r++) {
+  pine('pine', 0, r)
+  pine('pine', MAP_W - 1, r)
+}
+// broad pines anchor the bottom corners
+objects.push({ key: 'pine_big', col: 0, row: 13, w: 2, h: 2, solid: 'box' })
+objects.push({ key: 'pine_big', col: MAP_W - 2, row: 13, w: 2, h: 2, solid: 'box' })
 
-// town sign in the central plaza
-set(ground, 10, 9, T.SIGN)
-set(interaction, 10, 9, INT.SIGN)
+// picket fence along the bottom (the LAB path exits through the gap)
+for (let c = 2; c <= MAP_W - 3; c++) {
+  if (c === lab.doorCol) continue
+  if (ground[MAP_H - 1][c] === T.GRASS) set(ground, c, MAP_H - 1, T.FENCE_H)
+}
 
-// a little decorative fence + pond accent near the lab/gym gap
-set(ground, 12, 4, T.FENCE)
-set(ground, 13, 4, T.FENCE)
-set(ground, 6, 4, T.FENCE)
-set(ground, 7, 4, T.FENCE)
+// ---- decoration: flower beds, shrubs, accent trees, grass variation ----
+// round trees flanking the avenue like the reference art
+pine('tree_round', 1, 7)
+pine('tree_round', 18, 7)
 
-// ---- collision derived from tiles (walkable: grass/path/flowers) ----
-const WALKABLE = new Set([T.GRASS, T.PATH, T.FLOWERS])
-const collision = ground.map((row) => row.map((t) => (WALKABLE.has(t) ? 0 : 1)))
+// flower beds (intentional clusters, not confetti)
+const flowerBeds = [
+  [6, 2, T.FLOWERS2], [6, 4, T.FLOWERS],
+  [12, 2, T.FLOWERS], [12, 4, T.FLOWERS2],
+  [2, 5, T.FLOWERS], [17, 5, T.FLOWERS2],
+  [7, 5, T.FLOWERS2], [13, 5, T.FLOWERS],
+  [7, 8, T.FLOWERS], [11, 9, T.FLOWERS2],
+  [7, 11, T.FLOWERS2], [12, 10, T.FLOWERS],
+  [2, 13, T.FLOWERS], [17, 13, T.FLOWERS2],
+  [11, 13, T.FLOWERS],
+]
+for (const [c, r, t] of flowerBeds) {
+  if (ground[r][c] === T.GRASS) set(ground, c, r, t)
+}
 
-// ---- NPC tiles (blocked + interactable; sprite drawn separately) ----
-// Place on grass tiles with a walkable neighbour the player can stand on.
+// shrubs
+for (const [c, r] of [[2, 7], [17, 7], [12, 13], [7, 13]]) {
+  if (ground[r][c] === T.GRASS) set(ground, c, r, T.BUSH)
+}
+
+// grass tuft variation
+const tufts = [
+  [3, 5], [9, 2], [11, 3], [6, 3], [12, 3], [15, 5], [4, 7], [8, 7],
+  [11, 7], [14, 7], [1, 9], [11, 8], [12, 9], [7, 9], [1, 11], [18, 9],
+  [18, 11], [11, 11], [3, 13], [5, 13], [14, 13], [16, 13], [10, 13],
+]
+for (const [c, r] of tufts) {
+  if (ground[r][c] === T.GRASS) set(ground, c, r, T.GRASS2)
+}
+
+// ---- collision: derive from ground, then OR in object footprints ----
+const collision = ground.map((row) => row.map((t) => (WALKABLE_FLOOR.has(t) ? 0 : 1)))
+for (const o of objects) {
+  if (o.solid === 'box') {
+    rect(collision, o.col, o.row, o.col + o.w - 1, o.row + o.h - 1, 1)
+  } else if (o.solid === 'base') {
+    rect(collision, o.col, o.row + o.h - 1, o.col + o.w - 1, o.row + o.h - 1, 1) // trunk row
+  }
+}
+// the map border is never walkable (tree wall / fence / off-screen exit)
+rect(collision, 0, 0, MAP_W - 1, 0, 1)
+rect(collision, 0, MAP_H - 1, MAP_W - 1, MAP_H - 1, 1)
+rect(collision, 0, 0, 0, MAP_H - 1, 1)
+rect(collision, MAP_W - 1, 0, MAP_W - 1, MAP_H - 1, 1)
+
+// ---- NPCs (blocked + interactable; sprite drawn separately) ----
 function placeNpc(c, r, intId) {
   set(collision, c, r, 1)
   set(interaction, c, r, intId)
 }
-placeNpc(5, 6, INT.NPC1) // on grass beside the main avenue
-placeNpc(14, 6, INT.NPC2) // on grass near the gym front
+placeNpc(6, 6, INT.NPC1) // on the avenue, west of the LAB path
+placeNpc(14, 6, INT.NPC2) // on the avenue, near the GYM
 
-export const mapData = { ground, collision, interaction }
-export const SPAWN = { col: 10, row: 8 } // on the central connector path
-export { FLOOR_TILES }
+export const mapData = { ground, collision, interaction, objects }
+export const SPAWN = { col: 10, row: 8 } // on the central path below the avenue

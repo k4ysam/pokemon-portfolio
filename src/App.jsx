@@ -13,11 +13,12 @@ const BASE_H = MAP_H * TILE
 
 // Building label signs — centered over each building's roof (tile coords).
 const LABELS = [
-  { text: 'HOME', cx: 4.0, top: 1 },
-  { text: 'LAB', cx: 10.0, top: 1 },
-  { text: 'GYM', cx: 16.0, top: 1 },
-  { text: 'CENTER', cx: 6.0, top: 10 },
-  { text: 'MART', cx: 14.0, top: 10 },
+  { text: 'HOME', cx: 3.5, top: 1 },
+  { text: 'LAB', cx: 9.5, top: 1 },
+  { text: 'GYM', cx: 15.5, top: 1 },
+  { text: 'CONTACT', cx: 4.5, top: 8 },
+  { text: 'LINKS', cx: 15.5, top: 8 },
+  { text: 'SAMAKSH TOWN', cx: 9, top: 13.1, size: 2.2 },
 ]
 
 export default function App() {
@@ -89,10 +90,10 @@ export default function App() {
     setMode('town')
   }
 
-  const labelStyle = (cx, top) => ({
+  const labelStyle = (cx, top, size = 3.4) => ({
     left: `${((cx * TILE) / BASE_W) * 100}%`,
     top: `${((top * TILE + 1) / BASE_H) * 100}%`,
-    fontSize: `${Math.max(5, 3.4 * stage.scale)}px`,
+    fontSize: `${Math.max(4, size * stage.scale)}px`,
   })
 
   return (
@@ -104,7 +105,7 @@ export default function App() {
         {mode !== 'intro' && (
           <div className="label-layer">
             {LABELS.map((l) => (
-              <span className="building-label" key={l.text} style={labelStyle(l.cx, l.top)}>
+              <span className="building-label" key={l.text} style={labelStyle(l.cx, l.top, l.size)}>
                 {l.text}
               </span>
             ))}
