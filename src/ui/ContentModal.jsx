@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // Fullscreen building-interior modal with a fade-to-black transition and a
 // Pokemon-style pixel border. Closes via Escape (routed by App) or the Back button.
@@ -18,9 +18,14 @@ export default function ContentModal({ data, closeSignal, onClose }) {
     setTimeout(() => onClose?.(), 280) // let the fade play out
   }
 
-  // Escape / B button routed from App
+  // Escape / B button routed from App. closeSignal is a shared counter that
+  // outlives this modal — only react to changes after mount (like DialogueBox),
+  // or a reopened modal instantly closes itself.
+  const prevClose = useRef(closeSignal)
   useEffect(() => {
-    if (closeSignal) handleClose()
+    if (closeSignal === prevClose.current) return
+    prevClose.current = closeSignal
+    handleClose()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [closeSignal])
 
