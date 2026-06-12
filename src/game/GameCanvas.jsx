@@ -8,9 +8,9 @@ import { currentDir } from './input.js'
 import { drawScene } from './renderer.js'
 import { createGameLoop, loadImage } from './gameLoop.js'
 
-const BASE_W = MAP_W * TILE // 320
-const BASE_H = MAP_H * TILE // 240
-const ASSET_VERSION = 6
+const BASE_W = MAP_W * TILE // 800
+const BASE_H = MAP_H * TILE // 640
+const ASSET_VERSION = 7
 
 // GameCanvas owns the canvas + render loop. `pausedRef` halts player updates
 // while UI overlays are open. `engineRef` is populated so the parent can query
@@ -36,25 +36,31 @@ export default function GameCanvas({ pausedRef, engineRef }) {
 
     let assets = null
     let disposed = false
+    let showCollision = false // hold "c" to inspect the collision grid
+    const onDebugKey = (e) => {
+      if (e.key === 'c' || e.key === 'C') showCollision = e.type === 'keydown'
+    }
+    window.addEventListener('keydown', onDebugKey)
+    window.addEventListener('keyup', onDebugKey)
+
     const loop = createGameLoop((dt) => {
       if (!assets) return
       const paused = pausedRef?.current
       const wantDir = paused ? null : currentDir()
       updatePlayer(player, dt, wantDir, mapData.collision)
       const facingTarget = !paused && !player.moving && facingInteractable(player, mapData)
-      drawScene(ctx, assets, { map: mapData, player, npcs: NPCS, facingTarget })
+      drawScene(ctx, assets, { map: mapData, player, npcs: NPCS, facingTarget, showCollision })
     })
 
-    // ?v= busts the browser cache whenever the packed assets change —
-    // bump ASSET_VERSION after running `npm run pack-assets`.
+    // ?v= busts the browser cache whenever the assets change.
     Promise.all([
-      loadImage(`assets/tileset.png?v=${ASSET_VERSION}`),
+      loadImage(`assets/town-bg.png?v=${ASSET_VERSION}`),
       loadImage(`assets/objects.png?v=${ASSET_VERSION}`),
       loadImage(`assets/player.png?v=${ASSET_VERSION}`),
       loadImage(`assets/npcs.png?v=${ASSET_VERSION}`),
-    ]).then(([tileset, objects, playerSheet, npcSheet]) => {
+    ]).then(([bg, objects, playerSheet, npcSheet]) => {
       if (disposed) return
-      assets = { tileset, objects, player: playerSheet, npcs: npcSheet }
+      assets = { bg, objects, player: playerSheet, npcs: npcSheet }
       loop.start()
     })
 
@@ -73,6 +79,8 @@ export default function GameCanvas({ pausedRef, engineRef }) {
       disposed = true
       loop.stop()
       window.removeEventListener('resize', resize)
+      window.removeEventListener('keydown', onDebugKey)
+      window.removeEventListener('keyup', onDebugKey)
     }
   }, [pausedRef, engineRef])
 

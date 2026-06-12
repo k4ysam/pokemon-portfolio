@@ -6,8 +6,8 @@ import { INT } from './constants.js'
 export const NPCS = [
   {
     id: INT.NPC1,
-    col: 6,
-    row: 6,
+    col: 8,
+    row: 8,
     sprite: 0,
     lines: [
       'Welcome to SAMAKSH TOWN!',
@@ -16,8 +16,8 @@ export const NPCS = [
   },
   {
     id: INT.NPC2,
-    col: 14,
-    row: 6,
+    col: 16,
+    row: 8,
     sprite: 1,
     lines: [
       'Check out the Gym — some serious',

@@ -11,16 +11,6 @@ import { MAP_W, MAP_H, TILE } from './game/constants.js'
 const BASE_W = MAP_W * TILE
 const BASE_H = MAP_H * TILE
 
-// Building label signs — centered over each building's roof (tile coords).
-const LABELS = [
-  { text: 'HOME', cx: 3.5, top: 2 },
-  { text: 'LAB', cx: 9.5, top: 2 },
-  { text: 'GYM', cx: 15.5, top: 2 },
-  { text: 'CONTACT', cx: 4.5, top: 8 },
-  { text: 'LINKS', cx: 15.5, top: 8 },
-  { text: 'SAMAKSH TOWN', cx: 11, top: 13.1, size: 2.2 },
-]
-
 export default function App() {
   const [mode, setMode] = useState('intro') // intro | town | dialogue | modal
   const [dialogue, setDialogue] = useState(null) // { lines }
@@ -90,27 +80,10 @@ export default function App() {
     setMode('town')
   }
 
-  const labelStyle = (cx, top, size = 3.4) => ({
-    left: `${((cx * TILE) / BASE_W) * 100}%`,
-    top: `${((top * TILE + 1) / BASE_H) * 100}%`,
-    fontSize: `${Math.max(4, size * stage.scale)}px`,
-  })
-
   return (
     <div className="app-root">
       <div className="stage" style={{ width: stage.w, height: stage.h }}>
         <GameCanvas pausedRef={pausedRef} engineRef={engineRef} />
-
-        {/* building label signs */}
-        {mode !== 'intro' && (
-          <div className="label-layer">
-            {LABELS.map((l) => (
-              <span className="building-label" key={l.text} style={labelStyle(l.cx, l.top, l.size)}>
-                {l.text}
-              </span>
-            ))}
-          </div>
-        )}
 
         <div className="crt-overlay" />
 
