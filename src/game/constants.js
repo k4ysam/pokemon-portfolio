@@ -36,6 +36,8 @@ export const INT = {
   NPC3: 16, // nurse (visual; spoken to via the NURSE counter tiles)
   NPC4: 17, // gym leader
   MON5: 18, // gym Pokemon
+  NPC5: 19, // lab professor
+  MON6: 26, // lab Pikachu
   // Center interior triggers
   NURSE: 20, // counter tiles in front of the nurse -> contact modal
   CENTER_PC: 21, // counter PC -> mailto
@@ -50,4 +52,12 @@ export const INT = {
   GYM_PROJECT2: 43,
   GYM_PROJECT3: 44,
   GYM_PROJECT4: 45,
+  // Lab interior triggers
+  LAB_EXIT: 50,       // door mat, step-on warp back to town
+  LAB_PROFESSOR: 51,  // research desk -> skills modal
+  LAB_LANGUAGES: 52,  // poke ball starter table
+  LAB_ML: 53,         // supercomputer
+  LAB_BACKEND: 54,    // server rack
+  LAB_FRONTEND: 55,   // dev workbench
+  LAB_TOOLS: 56,      // bookshelf / cabinet
 }

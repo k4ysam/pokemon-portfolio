@@ -80,7 +80,7 @@ set(26, 8, INT.SIGN)
 // ---- what each interaction id does on this map ----
 const actions = {
   [INT.HOUSE]: { kind: 'modal', content: 'about', name: 'HOME' },
-  [INT.LAB]: { kind: 'modal', content: 'skills', name: 'LAB' },
+  [INT.LAB]: { kind: 'warp', to: 'lab', spawn: 'entry', name: 'LAB' },
   [INT.GYM]: { kind: 'warp', to: 'gym', spawn: 'entry', name: 'GYM' },
   [INT.CENTER]: { kind: 'warp', to: 'center', spawn: 'entry', name: 'CENTER' },
   [INT.MART]: {
@@ -171,6 +171,7 @@ export const townDef = {
     default: { col: 22, row: 13, dir: DIR.DOWN }, // path north of the fountain
     fromCenter: { col: 12, row: 24, dir: DIR.DOWN }, // outside the CONTACT door
     fromGym: { col: 35, row: 9, dir: DIR.DOWN },    // outside the GYM door
+    fromLab: { col: 22, row: 9, dir: DIR.DOWN },    // outside the LAB door
   },
   // Background sub-rects (px) re-drawn over the sprites so the player passes
   // behind them — none in this town (nothing elevated spans a walkable tile).

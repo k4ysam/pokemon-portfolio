@@ -42,8 +42,8 @@ const uiState = () =>
 const targets = [
   { name: 'HOME door', c: 10, r: 9, dir: DIRS.up, expect: 'modal' },
   { name: 'HOME door (right tile)', c: 11, r: 9, dir: DIRS.up, expect: 'modal' },
-  { name: 'LAB door', c: 22, r: 9, dir: DIRS.up, expect: 'modal' },
-  { name: 'LAB door (right tile)', c: 23, r: 9, dir: DIRS.up, expect: 'modal' },
+  { name: 'LAB door', c: 22, r: 9, dir: DIRS.up, expect: 'warp' },
+  { name: 'LAB door (right tile)', c: 23, r: 9, dir: DIRS.up, expect: 'warp' },
   { name: 'GYM door', c: 35, r: 9, dir: DIRS.up, expect: 'warp' },
   { name: 'GYM door (right tile)', c: 36, r: 9, dir: DIRS.up, expect: 'warp' },
   { name: 'CONTACT door', c: 12, r: 24, dir: DIRS.up, expect: 'warp' },

@@ -224,3 +224,54 @@ pre-rendered background + derived collision) is reused for the interior.
 - The nurse sprite block on the trainers sheet is narrower than the standard
   96×128 cell grid; clipping block bounds fixed bleed from the neighboring
   block (gray strip + divider line).
+
+---
+
+# LAB walkable interior (skills)
+
+Mirror the Gym pipeline. No engine changes — data + assets only. The town LAB
+door currently opens the skills modal directly; it graduates to a walkable
+Professor's lab whose Professor re-opens that same RESEARCH CATALOG modal, with
+five themed stations (one per modal section) + a roaming Pikachu.
+
+## Phase 1 — Scaffold & asset pipeline
+- [x] `constants.js`: `INT.LAB_*` triggers (exit/professor/languages/ml/backend/
+      frontend/tools) + `NPC5`/`MON6`
+- [x] `scripts/generate-lab-bg.py` (lab.png 1536×1024 → public/assets/lab-bg.png
+      768×512 + lab-grid.png + lab-collision-review.png; mirrors generate-gym-bg)
+- [x] `src/game/maps/lab.js` collision + def
+- [x] Register `labDef` in `src/game/maps/index.js`
+- [x] Run generate-lab-bg.py → lab-grid.png
+
+## Phase 2 — Author the room
+- [x] Measured furniture vs grid overlay (4 quadrant + 4 targeted crops)
+- [x] Hand-authored collision + interaction tiles (professor desk → skills modal,
+      poke-ball table = LANGUAGES, supercomputer = ML&AI, server rack = BACKEND,
+      dev desk = FRONTEND, bookshelf+cabinet = TOOLS, door step-on)
+- [x] Professor wanderer (static, → skills modal) + roaming Pikachu
+- [x] Re-ran script, verified collision-review, sealed the cabinet bottom
+
+## Phase 3 — Wire & verify
+- [x] town.js: LAB door modal → warp to 'lab'; added `fromLab` spawn (22,9 down)
+- [x] scripts/verify-lab.mjs (mirror verify-gym); verify-town LAB door now `warp`
+- [x] verify-lab ALL PASS (12), verify-town ALL PASS, `npm run build` green
+
+## Review
+- Pure data + assets, zero engine changes — the multi-map engine already
+  supported everything (warp doors, `thenModal` dialogue chaining, static
+  wanderers, left/right-facing interactions from the Center).
+- The 5 `skills.js` modal sections map 1:1 onto 5 themed props: LANGUAGES =
+  starter Poke Ball table (center), ML&AI = supercomputer, BACKEND = server
+  rack, FRONTEND = dev workbench, TOOLS = bookshelf+cabinet. The Professor
+  (static NPC in front of the desk) re-opens the full RESEARCH CATALOG modal,
+  mirroring the Gym leader → projects pattern.
+- Collision hand-measured from the grid overlay: back wall rows 0-2, machine
+  fronts at row 3, desk drops to row 4 (professor zone), wall furniture faced
+  sideways, table dead-center, door opening at (10-13,14) with the red mat
+  (row 15) sealed/outside like the Center.
+- The whiteboard the user asked for IS in the art (above the desk) but is walled
+  off behind it, so it's decorative-only — not interactable without moving the
+  desk. Flagged for follow-up if desired.
+- Image style: first ChatGPT attempt came back isometric/modern; fixed by
+  feeding the accepted Gym + Center interiors as style references and demanding
+  "flat top-down, not isometric." Second attempt matched the DS look exactly.

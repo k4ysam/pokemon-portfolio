@@ -7,9 +7,10 @@ import { createWanderer } from '../wander.js'
 import { townDef } from './town.js'
 import { centerDef } from './center.js'
 import { gymDef } from './gym.js'
+import { labDef } from './lab.js'
 
 const MAPS = {}
-for (const def of [townDef, centerDef, gymDef]) {
+for (const def of [townDef, centerDef, gymDef, labDef]) {
   MAPS[def.id] = { ...def, wanderers: def.wanderers.map(createWanderer) }
 }
 
