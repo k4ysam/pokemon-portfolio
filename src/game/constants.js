@@ -34,6 +34,8 @@ export const INT = {
   MON3: 14,
   MON4: 15, // Center interior Eevee
   NPC3: 16, // nurse (visual; spoken to via the NURSE counter tiles)
+  NPC4: 17, // gym leader
+  MON5: 18, // gym Pokemon
   // Center interior triggers
   NURSE: 20, // counter tiles in front of the nurse -> contact modal
   CENTER_PC: 21, // counter PC -> mailto
@@ -41,4 +43,11 @@ export const INT = {
   CENTER_TV: 23,
   PAINTING: 24,
   CENTER_EXIT: 25, // door tiles, step-on warp back to town
+  // Gym interior triggers
+  GYM_EXIT: 40,    // door mat, step-on warp back to town
+  GYM_LEADER: 41,  // leader counter -> projects modal
+  GYM_PROJECT1: 42,
+  GYM_PROJECT2: 43,
+  GYM_PROJECT3: 44,
+  GYM_PROJECT4: 45,
 }
