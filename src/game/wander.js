@@ -15,7 +15,7 @@ const DIRS = [DIR.DOWN, DIR.UP, DIR.LEFT, DIR.RIGHT]
 export function createWanderer(def) {
   return {
     ...def,
-    dir: DIR.DOWN,
+    dir: def.dir ?? DIR.DOWN,
     moving: false,
     progress: 0,
     fromCol: def.col,
@@ -29,8 +29,10 @@ export function createWanderer(def) {
 }
 
 // Advance one wanderer. `isBlocked(c, r)` must already account for the map,
-// the player and the other wanderers.
+// the player and the other wanderers. Static wanderers (e.g. the nurse behind
+// her counter) never roll a step — they only turn when spoken to.
 export function updateWanderer(e, dt, isBlocked) {
+  if (e.static) return
   if (e.moving) {
     e.progress += dt / e.moveMs
     if (e.progress >= 1) {
@@ -81,4 +83,9 @@ export function updateWanderer(e, dt, isBlocked) {
 // Does the wanderer currently occupy (or move between) this tile?
 export function occupies(e, c, r) {
   return (e.col === c && e.row === r) || (e.moving && e.fromCol === c && e.fromRow === r)
+}
+
+// Which of `wanderers` is on (or moving through) this tile, if any?
+export function wandererAt(wanderers, col, row) {
+  return wanderers.find((w) => occupies(w, col, row)) || null
 }

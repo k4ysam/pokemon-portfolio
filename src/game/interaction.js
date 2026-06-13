@@ -1,21 +1,12 @@
-// Resolve what the player is facing into a UI action.
-
-import { MAP_W, MAP_H, INT, DIR } from './constants.js'
+// Resolve what the player is facing into a UI action, using the current
+// map's `actions` table (interaction id -> descriptor). Descriptor kinds:
+//   { kind: 'modal', content }            — open a ContentModal
+//   { kind: 'dialogue', lines, thenModal? } — DialogueBox, optionally chaining
+//                                            into a modal when dismissed
+//   { kind: 'warp', to, spawn, onStep? }  — fade-warp to another map
+import { DIR } from './constants.js'
 import { facingTile } from './player.js'
-import { wandererAt } from './npc.js'
-
-// Map building interaction ids -> the modal content key (or a placeholder dialogue).
-const BUILDINGS = {
-  [INT.HOUSE]: { kind: 'modal', content: 'about', name: 'HOME' },
-  [INT.LAB]: { kind: 'modal', content: 'skills', name: 'LAB' },
-  [INT.GYM]: { kind: 'modal', content: 'projects', name: 'GYM' },
-  [INT.CENTER]: { kind: 'modal', content: 'contact', name: 'CENTER' },
-  [INT.MART]: {
-    kind: 'dialogue',
-    name: 'MART',
-    lines: ['This shop is restocking...', 'Come back soon!'],
-  },
-}
+import { wandererAt } from './wander.js'
 
 const FACE_PLAYER = {
   [DIR.UP]: DIR.DOWN,
@@ -24,34 +15,30 @@ const FACE_PLAYER = {
   [DIR.RIGHT]: DIR.LEFT,
 }
 
+function inBounds(map, col, row) {
+  return col >= 0 && row >= 0 && col < map.cols && row < map.rows
+}
+
 // Is the tile the player faces interactable? (used for the "!" indicator)
 export function facingInteractable(player, map) {
   const { col, row } = facingTile(player)
-  if (col < 0 || row < 0 || col >= MAP_W || row >= MAP_H) return false
-  return map.interaction[row][col] !== 0 || wandererAt(col, row) !== null
+  if (!inBounds(map, col, row)) return false
+  return map.interaction[row][col] !== 0 || wandererAt(map.wanderers, col, row) !== null
 }
 
 // Resolve the facing interaction into a descriptor the UI router can act on.
 export function resolveInteraction(player, map) {
   const { col, row } = facingTile(player)
-  if (col < 0 || row < 0 || col >= MAP_W || row >= MAP_H) return null
+  if (!inBounds(map, col, row)) return null
 
-  const w = wandererAt(col, row)
+  const w = wandererAt(map.wanderers, col, row)
   if (w) {
     w.dir = FACE_PLAYER[player.dir] // turn toward the player
     w.frameCol = 1
-    return { kind: 'dialogue', name: w.id, lines: w.lines }
+    return { kind: 'dialogue', name: w.id, lines: w.lines, thenModal: w.thenModal }
   }
 
   const id = map.interaction[row][col]
   if (!id) return null
-  if (id === INT.SIGN) {
-    return {
-      kind: 'dialogue',
-      name: 'SIGN',
-      lines: ['SAMAKSH TOWN', 'A portfolio you can walk around in.'],
-    }
-  }
-  if (BUILDINGS[id]) return BUILDINGS[id]
-  return null
+  return map.actions[id] || null
 }

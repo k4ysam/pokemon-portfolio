@@ -34,6 +34,7 @@ const teleport = (c, r, dir) =>
 
 const uiState = () =>
   p.evaluate(() => ({
+    mapId: window.__game.mapId,
     modal: document.querySelector('.modal-title')?.textContent ?? null,
     dialogue: document.querySelector('.dialogue-text')?.textContent ?? null,
   }))
@@ -45,8 +46,8 @@ const targets = [
   { name: 'LAB door (right tile)', c: 23, r: 9, dir: DIRS.up, expect: 'modal' },
   { name: 'GYM door', c: 35, r: 9, dir: DIRS.up, expect: 'modal' },
   { name: 'GYM door (right tile)', c: 36, r: 9, dir: DIRS.up, expect: 'modal' },
-  { name: 'CONTACT door', c: 12, r: 24, dir: DIRS.up, expect: 'modal' },
-  { name: 'CONTACT door (right tile)', c: 13, r: 24, dir: DIRS.up, expect: 'modal' },
+  { name: 'CONTACT door', c: 12, r: 24, dir: DIRS.up, expect: 'warp' },
+  { name: 'CONTACT door (right tile)', c: 13, r: 24, dir: DIRS.up, expect: 'warp' },
   { name: 'MISC door', c: 33, r: 24, dir: DIRS.up, expect: 'dialogue' },
   { name: 'MISC door (right tile)', c: 34, r: 24, dir: DIRS.up, expect: 'dialogue' },
   { name: 'town sign (notice board)', c: 26, r: 9, dir: DIRS.up, expect: 'dialogue' },
@@ -57,19 +58,25 @@ for (const t of targets) {
   await teleport(t.c, t.r, t.dir)
   await new Promise((r) => setTimeout(r, 250))
   await p.keyboard.press('KeyZ')
-  await new Promise((r) => setTimeout(r, 600))
+  await new Promise((r) => setTimeout(r, t.expect === 'warp' ? 1000 : 600))
   const s = await uiState()
-  const got = s.modal ? 'modal' : s.dialogue ? 'dialogue' : 'nothing'
+  const got =
+    s.mapId !== 'town' ? 'warp' : s.modal ? 'modal' : s.dialogue ? 'dialogue' : 'nothing'
   const ok = got === t.expect
   if (!ok) failed++
   console.log(`${ok ? 'PASS' : 'FAIL'} ${t.name} @(${t.c},${t.r}) -> ${got}`,
-    s.modal ? `[${s.modal.trim()}]` : s.dialogue ? `[${s.dialogue.trim().slice(0, 40)}]` : '')
+    s.modal ? `[${s.modal.trim()}]` : s.dialogue ? `[${s.dialogue.trim().slice(0, 40)}]` : got === 'warp' ? `[${s.mapId}]` : '')
   // close whatever opened (modal needs its fade; dialogue may take 2 presses)
   for (let i = 0; i < 4; i++) {
     await p.keyboard.press('Escape')
     await new Promise((r) => setTimeout(r, 350))
     const cleared = await uiState()
     if (!cleared.modal && !cleared.dialogue) break
+  }
+  // a warp target leaves us inside the interior — jump straight back out
+  if (got === 'warp') {
+    await p.evaluate(() => window.__game.warpTo('town', 'fromCenter'))
+    await new Promise((r) => setTimeout(r, 300))
   }
 }
 

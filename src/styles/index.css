@@ -87,6 +87,21 @@ body {
   z-index: 5;
 }
 
+/* ---- warp fade (door transitions between maps) ---- */
+.warp-fade {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.32s ease;
+  z-index: 30;
+}
+
+.warp-fade-on {
+  opacity: 1;
+}
+
 /* ---- dialogue box ---- */
 .dialogue-box {
   position: absolute;

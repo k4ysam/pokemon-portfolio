@@ -9,3 +9,6 @@ tuxemon-assets/
 shot_*.png
 # generated collision review overlay (rerun scripts/derive-collision.py)
 collision-overlay.png
+# generated Center interior overlays (rerun scripts/derive-center.py)
+scripts/assets-src/center-grid.png
+scripts/assets-src/center-collision-review.png

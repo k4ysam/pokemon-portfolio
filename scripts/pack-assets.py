@@ -422,7 +422,10 @@ player_sheet.save(os.path.join(OUT, "player.png"))
 # character occupies a 3x4 block of 32px cells on its own flat bg color.
 # Output layout matches player.png: rows DOWN/UP/LEFT/RIGHT, cols
 # (step, idle, step); blocks of 3 columns side by side per NPC.
-NPC_BLOCKS = [0, 96]  # block origin x: scientist / professor, Silver (rival)
+# block boxes (x, y, w, h): scientist / professor, Silver (rival), nurse.
+# The nurse block is narrower than the 96x128 grid — its right/bottom edges
+# bleed into the neighboring block's bg and a divider line, so clip them off.
+NPC_BLOCKS = [(0, 0, 96, 128), (96, 0, 96, 128), (768, 768, 89, 126)]
 # (cellCol, cellRow) within a block for each output (row, col); the sheet has
 # no right-facing walk frames — Gen 4 mirrors them from the left-facing row.
 NPC_CELLS = [
@@ -432,11 +435,13 @@ NPC_CELLS = [
     [(0, 2), (0, 1), (0, 3)],  # right (mirrored left)
 ]
 npc_sheet = Image.new("RGBA", (len(NPC_BLOCKS) * 3 * CHAR_W, 4 * CHAR_H), (0, 0, 0, 0))
-for i, bx in enumerate(NPC_BLOCKS):
-    npc_bg = trainers.getpixel((bx + 1, 1))
+for i, (bx, by, bw, bh) in enumerate(NPC_BLOCKS):
+    npc_bg = trainers.getpixel((bx + 1, by + 1))
     for r, cells in enumerate(NPC_CELLS):
         for c, (cc, cr) in enumerate(cells):
-            fr = keyed(trainers, bx + cc * 32, cr * 32, bx + cc * 32 + 31, cr * 32 + 31, npc_bg)
+            fr = keyed(trainers, bx + cc * 32, by + cr * 32,
+                       min(bx + cc * 32 + 31, bx + bw - 1),
+                       min(by + cr * 32 + 31, by + bh - 1), npc_bg)
             fr = fr.crop(fr.getbbox())
             if r == 3:
                 fr = fr.transpose(Image.FLIP_LEFT_RIGHT)

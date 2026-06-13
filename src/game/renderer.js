@@ -1,9 +1,8 @@
-// Canvas renderer. Draws the pre-rendered town background, y-sorts NPCs and
-// the player on top, then re-draws foreground patches of the background (the
-// elevated welcome sign) so sprites pass behind them.
+// Canvas renderer. Draws the current map's pre-rendered background, y-sorts
+// NPCs and the player on top, then re-draws foreground patches of the
+// background so sprites pass behind them.
 
-import { TILE, MAP_W, MAP_H, CHAR_W, CHAR_H, POKE_W, POKE_H, CHAR_SCALE } from './constants.js'
-import { FOREGROUND_RECTS } from './mapData.js'
+import { TILE, CHAR_W, CHAR_H, POKE_W, POKE_H, CHAR_SCALE } from './constants.js'
 import { OBJ_RECTS } from './objectAtlas.js'
 
 // Draw one cw x ch frame from a walk sheet (3-column blocks per sprite, one
@@ -18,8 +17,10 @@ function drawChar(ctx, sheet, block, frameCol, dirRow, px, py, cw = CHAR_W, ch =
 }
 
 export function drawScene(ctx, assets, state) {
-  const { bg, player: playerSheet, npcs: npcSheet, pokemon: pokeSheet, objects: objSheet } = assets
-  const { map, player, wanderers, facingTarget, showCollision, camX = 0, camY = 0 } = state
+  const { player: playerSheet, npcs: npcSheet, pokemon: pokeSheet, objects: objSheet } = assets
+  const { map, player, facingTarget, showCollision, camX = 0, camY = 0 } = state
+  const bg = assets.bgs[map.id]
+  const wanderers = map.wanderers
 
   ctx.imageSmoothingEnabled = false
   // everything below draws in world coordinates; the camera shifts the view
@@ -44,7 +45,7 @@ export function drawScene(ctx, assets, state) {
   for (const d of drawables) d.draw()
 
   // --- foreground: background patches the player walks behind ---
-  for (const [x, y, w, h] of FOREGROUND_RECTS) {
+  for (const [x, y, w, h] of map.foregroundRects) {
     ctx.drawImage(bg, x, y, w, h, x, y, w, h)
   }
 
@@ -61,8 +62,8 @@ export function drawScene(ctx, assets, state) {
   // --- debug: hold "c" to tint blocked tiles ---
   if (showCollision) {
     ctx.fillStyle = 'rgba(255,0,0,0.35)'
-    for (let r = 0; r < MAP_H; r++) {
-      for (let c = 0; c < MAP_W; c++) {
+    for (let r = 0; r < map.rows; r++) {
+      for (let c = 0; c < map.cols; c++) {
         if (map.collision[r][c]) ctx.fillRect(c * TILE, r * TILE, TILE, TILE)
       }
     }
