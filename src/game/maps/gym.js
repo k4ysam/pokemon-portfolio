@@ -112,6 +112,7 @@ const wanderers = [
     dir: DIR.DOWN,
     static: true,
     lines: ['So — you think you can handle', 'my PROJECTS GYM?'],
+    thenModal: 'projects',
   },
   {
     id: INT.MON5,

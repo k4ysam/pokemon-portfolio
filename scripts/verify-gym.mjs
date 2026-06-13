@@ -58,7 +58,7 @@ const closeAll = async () => {
 }
 
 // --- 1. Enter the gym through the town GYM door ---
-await teleport(35, 8, DIRS.up)
+await teleport(35, 9, DIRS.up)
 await sleep(250)
 await p.keyboard.press('KeyZ')
 await sleep(1000)
@@ -80,16 +80,16 @@ for (let i = 0; i < 4 && !(await gameState()).modal; i++) {
   await sleep(700)
 }
 s = await gameState()
-const modalOk = !!s.modal && s.modal.toUpperCase().includes('PROJECT')
+const modalOk = !!s.modal && s.modal.toUpperCase().includes('GYM')
 check(modalOk, 'leader chains into projects modal', `[${s.modal}]`)
 await closeAll()
 
 // --- 3. All 4 project stations ---
 const stations = [
-  { name: 'left station 1',  c: 2,  r: 7, dir: DIRS.up, snip: 'project' },
-  { name: 'left station 2',  c: 2,  r: 9, dir: DIRS.up, snip: 'project' },
-  { name: 'right station 1', c: 21, r: 7, dir: DIRS.up, snip: 'project' },
-  { name: 'right station 2', c: 21, r: 9, dir: DIRS.up, snip: 'project' },
+  { name: 'left station 1',  c: 2,  r: 7, dir: DIRS.up, snip: 'portfolio' },
+  { name: 'left station 2',  c: 2,  r: 9, dir: DIRS.up, snip: 'stack' },
+  { name: 'right station 1', c: 21, r: 7, dir: DIRS.up, snip: 'systems' },
+  { name: 'right station 2', c: 21, r: 9, dir: DIRS.up, snip: 'open source' },
 ]
 for (const st of stations) {
   await teleport(st.c, st.r, st.dir)
